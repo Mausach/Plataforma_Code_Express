@@ -1,0 +1,45 @@
+body{
+    min-height: 100vh;
+    /*background:linear-gradient(to right,#13005A,#1C82AD) /*1 i 3 de la pal 1*/
+    
+}
+
+.darks-theme {
+    background-color: #0A0E17;
+    color: #ebe5e5;
+  }
+
+.lights-theme {
+    background-color: #FAF3E1;
+    color: #353432;
+  }
+
+.title {
+  color: #EF7F1A;
+
+}
+
+.card-light {
+  background: linear-gradient(135deg, #f8f5f1 70%, rgba(250, 243, 225, 0.3) 100%); /* Fondo claro personalizado */
+  color: #353432; /* Texto oscuro */
+}
+
+.card-dark {
+  background-color: #26385a; /* Fondo claro personalizado */
+  color: #ebe5e5; /* Texto oscuro */
+}
+
+.card-with-shadow {
+  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19); /* Múltiples capas de sombra */
+}
+
+.custom-button {
+  background-color: #141B2D; /* Color de fondo */
+  color: #E0E0E0; /* Color del texto */
+  
+}
+
+.custom-button:hover {
+  background-color: #EF7F1A; /* Color de fondo */
+  
+}
