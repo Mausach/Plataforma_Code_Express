@@ -4,7 +4,7 @@ import axios from "axios";
 //https://plataforma-code-express-backend.onrender.com
 
 export const authApi=axios.create({
-    baseURL: "http://localhost:4002",   
+    baseURL: "https://plataforma-code-express-backend.onrender.com",   
 });
 
 
