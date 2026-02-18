@@ -18,8 +18,8 @@ export const ModalCrearComision = ({
     fecha_inicio: '',
     fecha_fin: '',
     carrera_id: '',
-    modalidad: '', // ← Ahora vacío, se llenará automáticamente
-    dias_semana: [1, 3, 5], // ← Por defecto: Lunes, Miércoles, Viernes
+    modalidad: '',
+    dias_semana: [1, 3, 5],
     hora_inicio: '18:00',
     hora_fin: '22:00',
     estado: 'Programada'
@@ -30,7 +30,7 @@ export const ModalCrearComision = ({
   const [carreraCargando, setCarreraCargando] = useState(false);
 
   // Estados para el proceso
-  const [pasoActual, setPasoActual] = useState(1); // 1: Datos básicos, 2: Confirmar y generar
+  const [pasoActual, setPasoActual] = useState(1);
   const [comisionCreada, setComisionCreada] = useState(null);
   const [generando, setGenerando] = useState(false);
   const [clasesGeneradas, setClasesGeneradas] = useState(null);
@@ -40,24 +40,80 @@ export const ModalCrearComision = ({
   const [loadingCarreras, setLoadingCarreras] = useState(false);
   const [errorCarreras, setErrorCarreras] = useState(null);
 
-  // Días de la semana con sus números
+  // Días de la semana con sus números y colores
   const diasSemana = [
-    { id: 1, label: 'Lunes', value: 1 },
-    { id: 2, label: 'Martes', value: 2 },
-    { id: 3, label: 'Miércoles', value: 3 },
-    { id: 4, label: 'Jueves', value: 4 },
-    { id: 5, label: 'Viernes', value: 5 },
-    { id: 6, label: 'Sábado', value: 6 },
-    { id: 0, label: 'Domingo', value: 0 }
+    { id: 1, label: 'Lunes', value: 1, abbr: 'L' },
+    { id: 2, label: 'Martes', value: 2, abbr: 'M' },
+    { id: 3, label: 'Miércoles', value: 3, abbr: 'X' },
+    { id: 4, label: 'Jueves', value: 4, abbr: 'J' },
+    { id: 5, label: 'Viernes', value: 5, abbr: 'V' },
+    { id: 6, label: 'Sábado', value: 6, abbr: 'S' },
+    { id: 0, label: 'Domingo', value: 0, abbr: 'D' }
   ];
 
-  // Clases CSS según tema
+  // Colores según tema
+  const colors = {
+    primary: '#EF7F1A',
+    primaryHover: '#d96f0e',
+    text: theme === 'lights' ? '#353432' : '#ebe5e5',
+    background: theme === 'lights' ? '#f8f9fa' : '#2a3042',
+    border: theme === 'lights' ? '#353432' : '#ebe5e5',
+    cardBg: theme === 'lights' ? '#FAF3E1' : '#0A0E17',
+    inputBg: theme === 'lights' ? '#ffffff' : '#1e2330',
+    disabledBg: theme === 'lights' ? '#e9ecef' : '#363c4e',
+    checkboxBg: theme === 'lights' ? '#ffffff' : '#1e2330',
+    checkboxBorder: theme === 'lights' ? '#ced4da' : '#4a515e',
+  };
+
+  // Clases CSS dinámicas
   const cardClass = theme === 'lights' ? 'card-light' : 'card-dark';
   const textClass = theme === 'lights' ? 'text-dark' : 'text-light';
   const formControlClass = theme === 'lights' ? 'bg-white text-dark' : 'bg-dark text-light';
-  const borderColor = theme === 'lights' ? '#353432' : '#ebe5e5';
-  const titleColor = '#EF7F1A';
-  const bgColor = theme === 'lights' ? '#f8f9fa' : '#2a3042';
+  const borderColor = colors.border;
+  const titleColor = colors.primary;
+
+  // ===== ESTILOS PERSONALIZADOS PARA CHECKBOXES =====
+  const checkboxStyles = {
+    container: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '0.5rem',
+      marginTop: '0.5rem'
+    },
+    checkbox: {
+      // Versión 1: Checkbox cuadrado con texto
+      square: (isChecked) => ({
+        padding: '0.5rem 1rem',
+        backgroundColor: isChecked ? colors.primary : colors.checkboxBg,
+        color: isChecked ? '#ffffff' : colors.text,
+        border: `2px solid ${isChecked ? colors.primary : colors.checkboxBorder}`,
+        borderRadius: '8px',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        userSelect: 'none',
+        fontWeight: isChecked ? 'bold' : 'normal',
+        boxShadow: isChecked ? `0 2px 8px ${colors.primary}40` : 'none',
+        minWidth: '80px',
+        textAlign: 'center'
+      }),
+      // Versión 2: Checkbox circular (alternativa)
+      circle: (isChecked) => ({
+        width: '40px',
+        height: '40px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: isChecked ? colors.primary : colors.checkboxBg,
+        color: isChecked ? '#ffffff' : colors.text,
+        border: `2px solid ${isChecked ? colors.primary : colors.checkboxBorder}`,
+        borderRadius: '50%',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        fontWeight: 'bold',
+        boxShadow: isChecked ? `0 2px 8px ${colors.primary}40` : 'none'
+      })
+    }
+  };
 
   // ===== EFECTOS =====
 
@@ -109,8 +165,6 @@ export const ModalCrearComision = ({
         if (carrera) {
           setCarreraSeleccionada(carrera);
           
-          // Cargar modalidad automáticamente desde la carrera
-          // Convertir modalidad de carrera al formato de comisión
           let modalidadComision = 'Full-Time';
           if (carrera.modalidad === 'part-time') {
             modalidadComision = 'Part-Time';
@@ -122,9 +176,6 @@ export const ModalCrearComision = ({
             ...prev,
             modalidad: modalidadComision
           }));
-          
-          console.log('📚 Carrera seleccionada:', carrera);
-          console.log('📚 Modalidad cargada:', modalidadComision);
         }
       } catch (error) {
         console.error('Error al cargar datos de carrera:', error);
@@ -155,7 +206,7 @@ export const ModalCrearComision = ({
           const newDias = checked
             ? [...prev.dias_semana, numValue]
             : prev.dias_semana.filter(dia => dia !== numValue);
-          return { ...prev, dias_semana: newDias };
+          return { ...prev, dias_semana: newDias.sort((a, b) => a - b) };
         });
       }
     } else {
@@ -164,6 +215,17 @@ export const ModalCrearComision = ({
         [name]: value
       }));
     }
+  };
+
+  // Manejador personalizado para los checkboxes personalizados
+  const handleDiaClick = (diaValue) => {
+    setNewComision(prev => {
+      const isSelected = prev.dias_semana.includes(diaValue);
+      const newDias = isSelected
+        ? prev.dias_semana.filter(dia => dia !== diaValue)
+        : [...prev.dias_semana, diaValue];
+      return { ...prev, dias_semana: newDias.sort((a, b) => a - b) };
+    });
   };
 
   // ===== CREAR COMISIÓN Y CLASES =====
@@ -200,7 +262,7 @@ export const ModalCrearComision = ({
       return;
     }
 
-    // Validar horario si se van a generar clases
+    // Validar horario
     if (newComision.dias_semana.length === 0) {
       mostrarError('Debe seleccionar al menos un día de clase.');
       return;
@@ -219,7 +281,6 @@ export const ModalCrearComision = ({
     try {
       setGenerando(true);
 
-      // OBTENER ID DEL USUARIO REAL
       const obtenerIdUsuario = () => {
         try {
           const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -235,7 +296,6 @@ export const ModalCrearComision = ({
 
       const usuarioId = obtenerIdUsuario();
 
-      // Paso 1: Crear comisión
       const comisionData = {
         nombre: newComision.nombre.trim(),
         fecha_inicio: newComision.fecha_inicio,
@@ -271,8 +331,8 @@ export const ModalCrearComision = ({
           icon: 'info',
           title: 'Generando clases...',
           text: 'Por favor espere mientras se generan las clases.',
-          background: theme === 'lights' ? '#FAF3E1' : '#0A0E17',
-          color: theme === 'lights' ? '#353432' : '#ebe5e5',
+          background: colors.cardBg,
+          color: colors.text,
           showConfirmButton: false,
           allowOutsideClick: false,
           didOpen: () => {
@@ -298,17 +358,14 @@ export const ModalCrearComision = ({
         if (resultadoClases.ok) {
           setClasesGeneradas(resultadoClases);
           
-          // Mostrar resumen final
           const totalClases = calcularEstimacionClases();
           const primeraClase = new Date(newComision.fecha_inicio);
           const ultimaClase = new Date(newComision.fecha_fin);
           
-          // Ajustar primera clase al primer día seleccionado
           while (!newComision.dias_semana.includes(primeraClase.getDay())) {
             primeraClase.setDate(primeraClase.getDate() + 1);
           }
           
-          // Ajustar última clase al último día seleccionado
           while (!newComision.dias_semana.includes(ultimaClase.getDay())) {
             ultimaClase.setDate(ultimaClase.getDate() - 1);
           }
@@ -317,7 +374,7 @@ export const ModalCrearComision = ({
             icon: 'success',
             title: '✅ ¡Todo listo!',
             html: `
-              <div class="text-start">
+              <div class="text-start" style="color: ${colors.text}">
                 <p><strong>Comisión creada:</strong> ${resultadoComision.comision.nombre}</p>
                 <p><strong>Clases generadas:</strong> ${resultadoClases.total_clases || totalClases}</p>
                 <p><strong>Primera clase:</strong> ${primeraClase.toLocaleDateString()}</p>
@@ -330,29 +387,28 @@ export const ModalCrearComision = ({
                   .join(', ')}</p>
               </div>
             `,
-            background: theme === 'lights' ? '#FAF3E1' : '#0A0E17',
-            color: theme === 'lights' ? '#353432' : '#ebe5e5',
-            confirmButtonColor: '#EF7F1A',
+            background: colors.cardBg,
+            color: colors.text,
+            confirmButtonColor: colors.primary,
             confirmButtonText: 'Aceptar'
           }).then(() => {
             resetForm();
             handleClose();
           });
         } else {
-          // Comisión creada pero error en clases
           Swal.fire({
             icon: 'warning',
             title: 'Comisión creada',
             html: `
-              <div class="text-start">
+              <div class="text-start" style="color: ${colors.text}">
                 <p><strong>Comisión creada:</strong> ${resultadoComision.comision.nombre}</p>
                 <p><strong>Error al generar clases:</strong> ${resultadoClases.msg || 'No se pudieron generar las clases'}</p>
                 <p>Puede generarlas más tarde desde la gestión de comisiones.</p>
               </div>
             `,
-            background: theme === 'lights' ? '#FAF3E1' : '#0A0E17',
-            color: theme === 'lights' ? '#353432' : '#ebe5e5',
-            confirmButtonColor: '#EF7F1A'
+            background: colors.cardBg,
+            color: colors.text,
+            confirmButtonColor: colors.primary
           }).then(() => {
             resetForm();
             handleClose();
@@ -393,8 +449,8 @@ export const ModalCrearComision = ({
       icon: 'error',
       title: 'Error',
       text: mensaje,
-      background: theme === 'lights' ? '#FAF3E1' : '#0A0E17',
-      color: theme === 'lights' ? '#353432' : '#ebe5e5',
+      background: colors.cardBg,
+      color: colors.text,
       confirmButtonColor: '#dc3545'
     });
   };
@@ -433,7 +489,7 @@ export const ModalCrearComision = ({
       <Row>
         <Col md={6}>
           <Form.Group className="mb-3">
-            <Form.Label>Nombre de la Comisión *</Form.Label>
+            <Form.Label style={{ color: colors.text }}>Nombre de la Comisión *</Form.Label>
             <Form.Control
               type="text"
               name="nombre"
@@ -442,14 +498,18 @@ export const ModalCrearComision = ({
               required
               placeholder="Ej: Comisión React Febrero 2024"
               className={formControlClass}
-              style={{ borderColor: borderColor }}
+              style={{ 
+                borderColor: borderColor,
+                backgroundColor: colors.inputBg,
+                color: colors.text
+              }}
             />
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Carrera *</Form.Label>
+            <Form.Label style={{ color: colors.text }}>Carrera *</Form.Label>
             {loadingCarreras ? (
-              <div className="d-flex align-items-center">
+              <div className="d-flex align-items-center" style={{ color: colors.text }}>
                 <Spinner size="sm" className="me-2" />
                 <span>Cargando carreras...</span>
               </div>
@@ -463,8 +523,11 @@ export const ModalCrearComision = ({
                 value={newComision.carrera_id}
                 onChange={handleChange}
                 required
-                className={formControlClass}
-                style={{ borderColor: borderColor }}
+                style={{ 
+                  borderColor: borderColor,
+                  backgroundColor: colors.inputBg,
+                  color: colors.text
+                }}
                 disabled={carreraCargando}
               >
                 <option value="">Seleccionar carrera...</option>
@@ -476,7 +539,7 @@ export const ModalCrearComision = ({
               </Form.Select>
             )}
             {carreraCargando && (
-              <div className="mt-1">
+              <div className="mt-1" style={{ color: colors.text }}>
                 <Spinner size="sm" className="me-2" />
                 <small>Cargando datos de la carrera...</small>
               </div>
@@ -485,7 +548,10 @@ export const ModalCrearComision = ({
 
           {/* Información de la carrera seleccionada */}
           {carreraSeleccionada && (
-            <Alert variant="info" className="mt-2">
+            <Alert variant="info" className="mt-2" style={{ 
+              backgroundColor: theme === 'lights' ? '#cff4fc' : '#1a4b5e',
+              color: theme === 'lights' ? '#055160' : '#e3f0f5'
+            }}>
               <div className="d-flex justify-content-between align-items-center">
                 <div>
                   <strong>{carreraSeleccionada.nombre}</strong>
@@ -502,15 +568,18 @@ export const ModalCrearComision = ({
           )}
 
           <Form.Group className="mb-3">
-            <Form.Label>Modalidad *</Form.Label>
+            <Form.Label style={{ color: colors.text }}>Modalidad *</Form.Label>
             <Form.Control
               type="text"
               value={newComision.modalidad || 'Seleccione una carrera'}
               readOnly
-              className={formControlClass}
-              style={{ borderColor: borderColor, backgroundColor: 'rgba(0,0,0,0.05)' }}
+              style={{ 
+                borderColor: borderColor,
+                backgroundColor: colors.disabledBg,
+                color: colors.text
+              }}
             />
-            <Form.Text className="text-muted">
+            <Form.Text style={{ color: theme === 'lights' ? '#6c757d' : '#adb5bd' }}>
               Se carga automáticamente desde la carrera seleccionada
             </Form.Text>
           </Form.Group>
@@ -518,41 +587,50 @@ export const ModalCrearComision = ({
 
         <Col md={6}>
           <Form.Group className="mb-3">
-            <Form.Label>Fecha de Inicio *</Form.Label>
+            <Form.Label style={{ color: colors.text }}>Fecha de Inicio *</Form.Label>
             <Form.Control
               type="date"
               name="fecha_inicio"
               value={newComision.fecha_inicio}
               onChange={handleChange}
               required
-              className={formControlClass}
-              style={{ borderColor: borderColor }}
+              style={{ 
+                borderColor: borderColor,
+                backgroundColor: colors.inputBg,
+                color: colors.text
+              }}
               min={new Date().toISOString().split('T')[0]}
             />
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Fecha de Fin *</Form.Label>
+            <Form.Label style={{ color: colors.text }}>Fecha de Fin *</Form.Label>
             <Form.Control
               type="date"
               name="fecha_fin"
               value={newComision.fecha_fin}
               onChange={handleChange}
               required
-              className={formControlClass}
-              style={{ borderColor: borderColor }}
+              style={{ 
+                borderColor: borderColor,
+                backgroundColor: colors.inputBg,
+                color: colors.text
+              }}
               min={newComision.fecha_inicio}
             />
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Estado</Form.Label>
+            <Form.Label style={{ color: colors.text }}>Estado</Form.Label>
             <Form.Select
               name="estado"
               value={newComision.estado}
               onChange={handleChange}
-              className={formControlClass}
-              style={{ borderColor: borderColor }}
+              style={{ 
+                borderColor: borderColor,
+                backgroundColor: colors.inputBg,
+                color: colors.text
+              }}
             >
               <option value="Programada">Programada</option>
               <option value="En curso">En curso</option>
@@ -561,7 +639,7 @@ export const ModalCrearComision = ({
         </Col>
       </Row>
 
-      <hr className="my-4" />
+      <hr className="my-4" style={{ borderColor: borderColor }} />
 
       <h6 style={{ color: titleColor, marginBottom: '1rem' }}>
         Configuración de Clases
@@ -570,32 +648,62 @@ export const ModalCrearComision = ({
       <Row>
         <Col md={6}>
           <Form.Group className="mb-3">
-            <Form.Label>Días de Clase *</Form.Label>
-            <div className="d-flex flex-wrap gap-2">
-              {diasSemana.map((dia) => (
-                <Form.Check
-                  key={dia.id}
-                  type="checkbox"
-                  id={`dia-${dia.value}`}
-                  label={dia.label}
-                  name="dias_semana"
-                  value={dia.value}
-                  checked={newComision.dias_semana.includes(dia.value)}
-                  onChange={handleChange}
-                  className="border rounded p-2"
-                  style={{
-                    backgroundColor: newComision.dias_semana.includes(dia.value)
-                      ? titleColor
-                      : 'transparent',
-                    borderColor: borderColor,
-                    color: newComision.dias_semana.includes(dia.value)
-                      ? 'white'
-                      : textClass
-                  }}
-                />
-              ))}
+            <Form.Label style={{ color: colors.text }}>Días de Clase *</Form.Label>
+            
+            {/* VERSIÓN MEJORADA: Checkboxes personalizados */}
+            <div style={checkboxStyles.container}>
+              {diasSemana.map((dia) => {
+                const isSelected = newComision.dias_semana.includes(dia.value);
+                return (
+                  <div
+                    key={dia.id}
+                    onClick={() => handleDiaClick(dia.value)}
+                    style={checkboxStyles.checkbox.square(isSelected)}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = theme === 'lights' ? '#e9ecef' : '#363c4e';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = colors.checkboxBg;
+                      }
+                    }}
+                  >
+                    {dia.label}
+                  </div>
+                );
+              })}
             </div>
-            <Form.Text style={{ color: borderColor }}>
+
+            {/* Versión alternativa (circular) - comentada por si quieres probar */}
+            {/* <div style={checkboxStyles.container}>
+              {diasSemana.map((dia) => {
+                const isSelected = newComision.dias_semana.includes(dia.value);
+                return (
+                  <div
+                    key={dia.id}
+                    onClick={() => handleDiaClick(dia.value)}
+                    style={checkboxStyles.checkbox.circle(isSelected)}
+                    title={dia.label}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = theme === 'lights' ? '#e9ecef' : '#363c4e';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = colors.checkboxBg;
+                      }
+                    }}
+                  >
+                    {dia.abbr}
+                  </div>
+                );
+              })}
+            </div> */}
+
+            <Form.Text style={{ color: theme === 'lights' ? '#6c757d' : '#adb5bd' }}>
               Seleccione los días en que se dictarán las clases
             </Form.Text>
           </Form.Group>
@@ -605,29 +713,35 @@ export const ModalCrearComision = ({
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Hora de Inicio *</Form.Label>
+                <Form.Label style={{ color: colors.text }}>Hora de Inicio *</Form.Label>
                 <Form.Control
                   type="time"
                   name="hora_inicio"
                   value={newComision.hora_inicio}
                   onChange={handleChange}
                   required
-                  className={formControlClass}
-                  style={{ borderColor: borderColor }}
+                  style={{ 
+                    borderColor: borderColor,
+                    backgroundColor: colors.inputBg,
+                    color: colors.text
+                  }}
                 />
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Hora de Fin *</Form.Label>
+                <Form.Label style={{ color: colors.text }}>Hora de Fin *</Form.Label>
                 <Form.Control
                   type="time"
                   name="hora_fin"
                   value={newComision.hora_fin}
                   onChange={handleChange}
                   required
-                  className={formControlClass}
-                  style={{ borderColor: borderColor }}
+                  style={{ 
+                    borderColor: borderColor,
+                    backgroundColor: colors.inputBg,
+                    color: colors.text
+                  }}
                 />
               </Form.Group>
             </Col>
@@ -637,7 +751,15 @@ export const ModalCrearComision = ({
 
       {/* Resumen y estimación */}
       {newComision.fecha_inicio && newComision.fecha_fin && newComision.dias_semana.length > 0 && (
-        <Alert variant="info" className="mt-3">
+        <Alert 
+          variant="info" 
+          className="mt-3"
+          style={{ 
+            backgroundColor: theme === 'lights' ? '#cff4fc' : '#1a4b5e',
+            color: theme === 'lights' ? '#055160' : '#e3f0f5',
+            borderColor: theme === 'lights' ? '#b6effb' : '#0f3b4a'
+          }}
+        >
           <div className="d-flex justify-content-between align-items-center">
             <div>
               <strong>Resumen de clases:</strong>
@@ -673,21 +795,30 @@ export const ModalCrearComision = ({
       }}
       size="lg"
       centered
-      className={theme}
       backdrop={generando ? 'static' : true}
       keyboard={!generando}
+      style={{ color: colors.text }}
     >
       <Modal.Header
         closeButton={!generando}
-        className={`${cardClass} ${textClass}`}
-        style={{ borderBottomColor: borderColor }}
+        style={{ 
+          backgroundColor: colors.cardBg,
+          color: colors.text,
+          borderBottomColor: borderColor
+        }}
+        closeVariant={theme === 'lights' ? 'dark' : 'white'}
       >
         <Modal.Title style={{ color: titleColor }}>
           {generando ? 'Creando Comisión...' : 'Crear Nueva Comisión'}
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body className={`${cardClass} ${textClass}`}>
+      <Modal.Body 
+        style={{ 
+          backgroundColor: colors.cardBg,
+          color: colors.text
+        }}
+      >
         <Form onSubmit={handleCrearComision}>
           {renderPaso1()}
 
@@ -698,6 +829,10 @@ export const ModalCrearComision = ({
               variant="secondary"
               onClick={resetForm}
               disabled={generando || loadingCarreras}
+              style={{
+                backgroundColor: theme === 'lights' ? '#6c757d' : '#4a515e',
+                borderColor: theme === 'lights' ? '#6c757d' : '#4a515e'
+              }}
             >
               Limpiar
             </Button>
@@ -715,8 +850,8 @@ export const ModalCrearComision = ({
                     cancelButtonColor: borderColor,
                     confirmButtonText: 'Sí, cancelar',
                     cancelButtonText: 'Continuar',
-                    background: theme === 'lights' ? '#FAF3E1' : '#0A0E17',
-                    color: theme === 'lights' ? '#353432' : '#ebe5e5'
+                    background: colors.cardBg,
+                    color: colors.text
                   }).then((result) => {
                     if (result.isConfirmed) {
                       resetForm();
@@ -726,6 +861,10 @@ export const ModalCrearComision = ({
                 }}
                 className="me-2"
                 disabled={generando}
+                style={{
+                  color: colors.text,
+                  borderColor: borderColor
+                }}
               >
                 Cancelar
               </Button>
@@ -733,7 +872,11 @@ export const ModalCrearComision = ({
               <Button
                 variant="primary"
                 type="submit"
-                style={{ backgroundColor: titleColor, borderColor: titleColor }}
+                style={{ 
+                  backgroundColor: titleColor, 
+                  borderColor: titleColor,
+                  color: '#ffffff'
+                }}
                 disabled={generando || loadingCarreras || !newComision.carrera_id}
               >
                 {generando ? (

@@ -24,7 +24,7 @@ import {
 } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { obtenerAsistenciasPorClase } from '../../Helper/TomarAsistencias';
+import { obtenerAsistenciasPorClase, TomarAsistencias } from '../../Helper/TomarAsistencias';
 
 const PanelClases = ({ comision, theme }) => {
   const navigate = useNavigate();
@@ -293,7 +293,7 @@ const PanelClases = ({ comision, theme }) => {
     try {
       console.log('💾 Guardando asistencias en batch...');
       
-      const resultado = await guardarAsistenciaBatch(
+      const resultado = await TomarAsistencias(
         claseParaAsistencia._id,
         asistenciasTemp.map(a => ({
           usuario_id: a.usuario_id,
