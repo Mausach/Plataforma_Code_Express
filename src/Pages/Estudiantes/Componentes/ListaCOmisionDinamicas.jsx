@@ -13,12 +13,33 @@ import PanelDinamicoComision from '../../Admin/Componentes/GestComiciones';
 
 export const ListaComisionesDin = ({ theme, usuario }) => {
     const navigate = useNavigate();
-    
 
+    // Configuración de tema mejorada
+    const isLight = theme === 'lights';
+    
+    // Colores según tema
+    const colors = {
+        primary: '#EF7F1A',
+        primaryHover: '#d96f0e',
+        text: isLight ? '#212529' : '#e9ecef',
+        textMuted: isLight ? '#6c757d' : '#adb5bd',
+        textLight: isLight ? '#f8f9fa' : '#f8f9fa',
+        background: isLight ? '#f8f9fa' : '#0A0E17',
+        cardBg: isLight ? '#ffffff' : '#1A1F2E',
+        cardHeaderBg: isLight ? '#f8f9fa' : '#252A3A',
+        border: isLight ? '#dee2e6' : '#3A4255',
+        inputBg: isLight ? '#ffffff' : '#2a3042',
+        disabledBg: isLight ? '#e9ecef' : '#363c4e',
+        placeholderColor: isLight ? '#6c757d' : '#a0a0a0',
+        success: isLight ? '#198754' : '#2ecc71',
+        warning: isLight ? '#ffc107' : '#f39c12',
+        danger: isLight ? '#dc3545' : '#e74c3c',
+        info: isLight ? '#0dcaf0' : '#3498db'
+    };
 
     // 🔥 NORMALIZAR USUARIO: Aceptar tanto _id como id
     const usuarioNormalizado = {
-        id: usuario?._id || usuario?.id,  // ✅ Toma _id del MongoDB o id del front
+        id: usuario?._id || usuario?.id,
         _id: usuario?._id || usuario?.id,
         nombres: usuario?.nombres || 'Usuario',
         apellido: usuario?.apellido || '',
@@ -32,7 +53,10 @@ export const ListaComisionesDin = ({ theme, usuario }) => {
         rol: usuario?.rol || 'alumno'
     };
 
-
+    // Determinar roles
+    const esAlumno = usuarioNormalizado.rol === 'alumno';
+    const esProfe = ['profe', 'admin', 'cordinador', 'corrector', 'acompañante'].includes(usuarioNormalizado.rol);
+    const puedeVerInscripcion = esAlumno; // Solo alumnos ven el botón de inscripción
 
     // Estados principales
     const [comisiones, setComisiones] = useState([]);
@@ -52,17 +76,24 @@ export const ListaComisionesDin = ({ theme, usuario }) => {
         progreso_promedio: 0
     });
 
-    // Clases según tema
-    const cardClass = theme === 'lights' ? 'card-light' : 'card-dark';
-    const textClass = theme === 'lights' ? 'text-dark' : 'text-light';
-    const borderColor = theme === 'lights' ? '#E0D8C5' : '#1F2535';
-    const titleColor = '#EF7F1A';
+    // Clases según tema (mantenemos para compatibilidad)
+    const cardClass = isLight ? 'card-light' : 'card-dark';
+    const textClass = isLight ? 'text-dark' : 'text-light';
+    const borderColor = colors.border;
+    const titleColor = colors.primary;
 
     // ✅ VALIDACIÓN CORREGIDA: No tiene llaves {}
     if (!usuario || !usuarioNormalizado.id) {
         console.error('❌ Usuario no válido:', usuario);
         return (
-            <Alert variant="danger" className={`${cardClass} ${textClass}`}>
+            <Alert 
+                variant="danger" 
+                style={{ 
+                    backgroundColor: colors.danger + '20',
+                    borderColor: colors.danger,
+                    color: colors.text
+                }}
+            >
                 <Alert.Heading>Error de autenticación</Alert.Heading>
                 <p>No se pudo identificar al estudiante. Por favor, inicia sesión nuevamente.</p>
                 <Button variant="primary" onClick={() => navigate('/login')}>
@@ -84,8 +115,6 @@ export const ListaComisionesDin = ({ theme, usuario }) => {
             try {
                 setLoading(true);
                 setError(null);
-
-             
                 
                 // ✅ Usar el ID normalizado
                 const comisionesData = await CargarComisionesUsuario(
@@ -127,7 +156,7 @@ export const ListaComisionesDin = ({ theme, usuario }) => {
         };
 
         cargarComisiones();
-    }, [refreshData, navigate, usuarioNormalizado.id]); // ✅ Dependencia con ID normalizado
+    }, [refreshData, navigate, usuarioNormalizado.id]);
 
     // Handlers
     const handleSelectComision = (comision) => {
@@ -174,17 +203,20 @@ export const ListaComisionesDin = ({ theme, usuario }) => {
     // Loading state
     if (loading) {
         return (
-            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+            <div className="d-flex justify-content-center align-items-center" style={{ 
+                minHeight: '400px',
+                backgroundColor: colors.background
+            }}>
                 <div className="text-center">
                     <Spinner
                         animation="border"
-                        variant={theme === 'lights' ? 'primary' : 'light'}
+                        variant={isLight ? 'primary' : 'light'}
                         style={{ width: '3rem', height: '3rem' }}
                     />
-                    <p className={`mt-3 ${textClass}`}>
+                    <p className={`mt-3`} style={{ color: colors.text }}>
                         Cargando tus comisiones...
                     </p>
-                    <small className="text-muted">
+                    <small style={{ color: colors.textMuted }}>
                         Estudiante: {usuarioNormalizado.nombres} {usuarioNormalizado.apellido}
                     </small>
                 </div>
@@ -195,7 +227,14 @@ export const ListaComisionesDin = ({ theme, usuario }) => {
     // Error state
     if (error) {
         return (
-            <Alert variant="danger" className={`${cardClass} ${textClass} border-0 shadow-sm`}>
+            <Alert 
+                variant="danger" 
+                style={{ 
+                    backgroundColor: colors.danger + '20',
+                    borderColor: colors.danger,
+                    color: colors.text
+                }}
+            >
                 <Alert.Heading className="d-flex align-items-center">
                     <span className="fs-4 me-2">⚠️</span> Error al cargar
                 </Alert.Heading>
@@ -226,181 +265,197 @@ export const ListaComisionesDin = ({ theme, usuario }) => {
 
     // Renderizar Lista de Comisiones
     return (
-        <div className={`card ${cardClass} card-with-shadow p-4`}>
-            {/* Header */}
-            <div className="mb-4">
-                <div className="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div className="d-flex align-items-center gap-2 mb-2">
-                            <h2 style={{ color: titleColor, margin: 0 }}>
-                                🎓 Mis Comisiones
-                            </h2>
-                            <Badge
-                                bg="warning"
+        <div style={{ 
+            backgroundColor: colors.background,
+            minHeight: '100vh',
+            padding: '2rem',
+            color: colors.text
+        }}>
+            <div className="container-fluid">
+                {/* Header */}
+                <div className="mb-4">
+                    <div className="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <h2 style={{ color: titleColor, margin: 0 }}>
+                                    🎓 Mis Comisiones
+                                </h2>
+                                <Badge
+                                    style={{
+                                        backgroundColor: titleColor,
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '20px',
+                                        color: '#ffffff'
+                                    }}
+                                >
+                                    <span className="fw-bold">
+                                        {comisiones.length} {comisiones.length === 1 ? 'inscripción' : 'inscripciones'}
+                                    </span>
+                                </Badge>
+                            </div>
+
+                            {/* Info del estudiante - usando usuarioNormalizado */}
+                            <p style={{ color: colors.textMuted }} className="mb-1">
+                                <span className="fw-bold" style={{ color: colors.text }}>{usuarioNormalizado.nombres} {usuarioNormalizado.apellido}</span>
+                                <span className="mx-2">•</span>
+                                <span style={{ color: colors.textMuted }}>Legajo: {usuarioNormalizado.legajo || 'N/A'}</span>
+                                <span className="mx-2">•</span>
+                                <span style={{ color: colors.textMuted }}>{usuarioNormalizado.email}</span>
+                            </p>
+
+                            {/* Stats rápidas */}
+                            <div className="d-flex gap-3 mt-2">
+                                <div className="d-flex align-items-center">
+                                    <PlayCircle className="me-1" style={{ color: colors.success }} />
+                                    <span style={{ color: colors.textMuted }}>
+                                        <strong style={{ color: colors.text }}>{stats.activas}</strong> activas
+                                    </span>
+                                </div>
+                                <div className="d-flex align-items-center">
+                                    <CheckCircle className="me-1" style={{ color: colors.textMuted }} />
+                                    <span style={{ color: colors.textMuted }}>
+                                        <strong style={{ color: colors.text }}>{stats.finalizadas}</strong> finalizadas
+                                    </span>
+                                </div>
+                                <div className="d-flex align-items-center">
+                                    <Clock className="me-1" style={{ color: titleColor }} />
+                                    <span style={{ color: colors.textMuted }}>
+                                        <strong style={{ color: colors.text }}>{stats.progreso_promedio}%</strong> progreso promedio
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                  
+                    </div>
+                </div>
+
+                {/* Buscador mejorado */}
+                <Row className="mb-4">
+                    <Col md={12}>
+                        <Form.Group>
+                            <Form.Control
+                                type="text"
+                                placeholder="🔍 Buscar por materia, horario, modalidad..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                                 style={{
-                                    backgroundColor: titleColor,
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '20px'
+                                    backgroundColor: colors.inputBg,
+                                    borderColor: colors.border,
+                                    color: colors.text,
+                                    padding: '0.75rem 1rem',
+                                    borderRadius: '10px'
+                                }}
+                            />
+                            {/* Estilo personalizado para el placeholder */}
+                            <style>
+                                {`
+                                    input::placeholder {
+                                        color: ${colors.placeholderColor} !important;
+                                        opacity: 1;
+                                    }
+                                    input:-ms-input-placeholder {
+                                        color: ${colors.placeholderColor} !important;
+                                    }
+                                    input::-ms-input-placeholder {
+                                        color: ${colors.placeholderColor} !important;
+                                    }
+                                `}
+                            </style>
+                        </Form.Group>
+                    </Col>
+                </Row>
+
+                {/* Grid de Cards */}
+                <Row>
+                    {comisionesOrdenadas.length > 0 ? (
+                        comisionesOrdenadas.map((comision) => (
+                            <Col key={comision._id} md={6} lg={4} className="mb-4">
+                                <CardComision
+                                    comision={comision}
+                                    theme={theme}
+                                    onSelect={handleSelectComision}
+                                    titleColor={titleColor}
+                                />
+                            </Col>
+                        ))
+                    ) : (
+                        <Col md={12}>
+                            <Card 
+                                className="text-center py-5" 
+                                style={{
+                                    backgroundColor: colors.cardBg,
+                                    borderColor: colors.border,
+                                    borderRadius: '15px',
+                                    borderStyle: 'dashed',
+                                    borderWidth: '2px'
                                 }}
                             >
-                                <span className="text-white fw-bold">
-                                    {comisiones.length} {comisiones.length === 1 ? 'inscripción' : 'inscripciones'}
-                                </span>
-                            </Badge>
-                        </div>
-
-                        {/* Info del estudiante - usando usuarioNormalizado */}
-                        <p className={`${textClass} mb-1`}>
-                            <span className="fw-bold">{usuarioNormalizado.nombres} {usuarioNormalizado.apellido}</span>
-                            <span className="mx-2">•</span>
-                            <span className="text-muted">Legajo: {usuarioNormalizado.legajo || 'N/A'}</span>
-                            <span className="mx-2">•</span>
-                            <span className="text-muted">{usuarioNormalizado.email}</span>
-                        </p>
-
-                        {/* Stats rápidas */}
-                        <div className="d-flex gap-3 mt-2">
-                            <div className="d-flex align-items-center">
-                                <PlayCircle className="me-1" style={{ color: '#28a745' }} />
-                                <span className={textClass}>
-                                    <strong>{stats.activas}</strong> activas
-                                </span>
-                            </div>
-                            <div className="d-flex align-items-center">
-                                <CheckCircle className="me-1" style={{ color: '#6c757d' }} />
-                                <span className={textClass}>
-                                    <strong>{stats.finalizadas}</strong> finalizadas
-                                </span>
-                            </div>
-                            <div className="d-flex align-items-center">
-                                <Clock className="me-1" style={{ color: titleColor }} />
-                                <span className={textClass}>
-                                    <strong>{stats.progreso_promedio}%</strong> progreso promedio
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Botón para ver comisiones disponibles */}
-                    <Button
-                        variant="outline-primary"
-                        onClick={() => navigate('/comisiones-disponibles')}
-                        style={{
-                            borderColor: titleColor,
-                            color: titleColor,
-                            padding: '0.5rem 1.5rem',
-                            borderRadius: '8px'
-                        }}
-                        className="d-flex align-items-center"
-                    >
-                        <Book className="me-2" />
-                        + Inscribirme
-                    </Button>
-                </div>
-            </div>
-
-            {/* Buscador */}
-            <Row className="mb-4">
-                <Col md={12}>
-                    <Form.Group>
-                        <Form.Control
-                            type="text"
-                            placeholder="🔍 Buscar por materia, horario, modalidad..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className={`
-                                ${theme === 'lights' ? 'bg-white text-dark' : 'bg-dark text-light'}
-                                border-0 shadow-sm
-                            `}
-                            style={{
-                                borderColor: borderColor,
-                                padding: '0.75rem 1rem',
-                                borderRadius: '10px'
-                            }}
-                        />
-                    </Form.Group>
-                </Col>
-            </Row>
-
-            {/* Grid de Cards */}
-            <Row>
-                {comisionesOrdenadas.length > 0 ? (
-                    comisionesOrdenadas.map((comision) => (
-                        <Col key={comision._id} md={6} lg={4} className="mb-4">
-                            <CardComision
-                                comision={comision}
-                                theme={theme}
-                                onSelect={handleSelectComision}
-                                titleColor={titleColor}
-                            />
+                                <Card.Body>
+                                    <div className="mb-4">
+                                        <Book size={64} style={{ color: colors.textMuted }} />
+                                    </div>
+                                    <h4 className="mb-3" style={{ color: titleColor }}>
+                                        {searchTerm ? 'Sin resultados' : 'No estás inscrito en ninguna comisión'}
+                                    </h4>
+                                    <p className="mb-4 px-5" style={{ color: colors.textMuted }}>
+                                        {searchTerm
+                                            ? `No encontramos comisiones que coincidan con "${searchTerm}"`
+                                            : 'Comienza inscribiéndote en una comisión para ver tu progreso académico.'}
+                                    </p>
+                                    {!searchTerm && puedeVerInscripcion && (
+                                        <Button
+                                            variant="primary"
+                                            size="lg"
+                                            onClick={() => navigate('/comisiones-disponibles')}
+                                            style={{
+                                                backgroundColor: titleColor,
+                                                borderColor: titleColor,
+                                                padding: '0.75rem 2rem',
+                                                borderRadius: '10px',
+                                                color: '#ffffff'
+                                            }}
+                                            className="d-inline-flex align-items-center"
+                                        >
+                                            <Book className="me-2" />
+                                            Ver comisiones disponibles
+                                        </Button>
+                                    )}
+                                    {searchTerm && (
+                                        <Button
+                                            variant="outline-secondary"
+                                            onClick={() => setSearchTerm('')}
+                                            className="d-inline-flex align-items-center"
+                                            style={{
+                                                borderColor: colors.border,
+                                                color: colors.text
+                                            }}
+                                        >
+                                            Limpiar búsqueda
+                                        </Button>
+                                    )}
+                                </Card.Body>
+                            </Card>
                         </Col>
-                    ))
-                ) : (
-                    <Col md={12}>
-                        <Card className={`text-center py-5 ${cardClass}`} style={{
-                            borderColor: borderColor,
-                            borderRadius: '15px',
-                            borderStyle: 'dashed',
-                            borderWidth: '2px'
-                        }}>
-                            <Card.Body>
-                                <div className="mb-4">
-                                    <Book size={64} className="text-muted" />
-                                </div>
-                                <h4 className="mb-3" style={{ color: titleColor }}>
-                                    {searchTerm ? 'Sin resultados' : 'No estás inscrito en ninguna comisión'}
-                                </h4>
-                                <p className="text-muted mb-4 px-5">
-                                    {searchTerm
-                                        ? `No encontramos comisiones que coincidan con "${searchTerm}"`
-                                        : 'Comienza inscribiéndote en una comisión para ver tu progreso académico.'}
-                                </p>
-                                {!searchTerm && (
-                                    <Button
-                                        variant="primary"
-                                        size="lg"
-                                        onClick={() => navigate('/comisiones-disponibles')}
-                                        style={{
-                                            backgroundColor: titleColor,
-                                            borderColor: titleColor,
-                                            padding: '0.75rem 2rem',
-                                            borderRadius: '10px'
-                                        }}
-                                        className="d-inline-flex align-items-center"
-                                    >
-                                        <Book className="me-2" />
-                                        Ver comisiones disponibles
-                                    </Button>
-                                )}
-                                {searchTerm && (
-                                    <Button
-                                        variant="outline-secondary"
-                                        onClick={() => setSearchTerm('')}
-                                        className="d-inline-flex align-items-center"
-                                    >
-                                        Limpiar búsqueda
-                                    </Button>
-                                )}
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                )}
-            </Row>
+                    )}
+                </Row>
 
-            {/* Footer */}
-            {comisiones.length > 0 && (
-                <div className={`mt-4 pt-3 text-center ${textClass}`} style={{
-                    borderTop: `1px solid ${borderColor}40`
-                }}>
-                    <small className="text-muted">
-                        <Clock className="me-1" />
-                        Última actualización: {new Date().toLocaleDateString('es-ES', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}
-                    </small>
-                </div>
-            )}
+                {/* Footer */}
+                {comisiones.length > 0 && (
+                    <div className={`mt-4 pt-3 text-center`} style={{
+                        borderTop: `1px solid ${colors.border}40`,
+                        color: colors.textMuted
+                    }}>
+                        <small>
+                            <Clock className="me-1" />
+                            Última actualización: {new Date().toLocaleDateString('es-ES', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}
+                        </small>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

@@ -1,7 +1,17 @@
 // Subcomponentes/CardComision.js
 import React from 'react';
 import { Card, Button, Badge } from 'react-bootstrap';
-import { Calendar, People, Clock, Book, ChevronRight, Person, PersonCheck } from 'react-bootstrap-icons';
+import { 
+  Calendar, 
+  People, 
+  Clock, 
+  Book, 
+  ChevronRight, 
+  Person, 
+  PersonCheck,
+  CalendarWeek,
+  ClockHistory
+} from 'react-bootstrap-icons';
 
 export const CardComision = ({ 
   comision, 
@@ -39,17 +49,6 @@ export const CardComision = ({
     onSelect(comision);
   };
 
-  // Obtener nombre del coordinador (si existe)
-  const getCoordinadorNombre = () => {
-    if (comision.coordinador) {
-      return `${comision.coordinador.nombres || ''} ${comision.coordinador.apellido || ''}`.trim();
-    }
-    if (comision.coordinador_nombre) {
-      return comision.coordinador_nombre;
-    }
-    return 'Sin coordinador';
-  };
-
   // Formatear fechas seguras
   const formatFecha = (fecha) => {
     if (!fecha) return 'No especificada';
@@ -62,6 +61,27 @@ export const CardComision = ({
     } catch (e) {
       return 'Fecha inválida';
     }
+  };
+
+  // Formatear días de la semana
+  const getDiasSemana = (dias) => {
+    if (!dias || !Array.isArray(dias) || dias.length === 0) return 'No especificados';
+    
+    const diasMap = {
+      1: 'Lunes',
+      2: 'Martes',
+      3: 'Miércoles',
+      4: 'Jueves',
+      5: 'Viernes',
+      6: 'Sábado',
+      7: 'Domingo'
+    };
+    
+    const nombresDias = dias.map(d => diasMap[d] || `Día ${d}`);
+    
+    if (nombresDias.length === 1) return nombresDias[0];
+    if (nombresDias.length === 2) return nombresDias.join(' y ');
+    return nombresDias.slice(0, -1).join(', ') + ' y ' + nombresDias.slice(-1);
   };
 
   // Calcular días hasta el inicio
@@ -86,7 +106,21 @@ export const CardComision = ({
     }
   };
 
+  // Obtener horario formateado
+  const getHorario = () => {
+    if (!comision.horario_comision) return 'Horario no especificado';
+    
+    const { hora_inicio, hora_fin } = comision.horario_comision;
+    
+    if (!hora_inicio || !hora_fin) return 'Horario incompleto';
+    
+    // Formatear horas (ya vienen en formato "20:00")
+    return `${hora_inicio} - ${hora_fin}`;
+  };
+
   const diasHastaInicio = getDiasHastaInicio();
+  const diasSemana = getDiasSemana(comision.horario_comision?.dias_semana);
+  const horario = getHorario();
 
   return (
     <Card 
@@ -148,38 +182,39 @@ export const CardComision = ({
         </div>
 
         <div className="d-flex flex-column gap-2 mb-3">
-          {/* Fechas */}
+          {/* Fechas de inicio y fin */}
           <div className="d-flex align-items-center">
             <Calendar size={14} className="me-2" style={{ color: titleColor }} />
             <small style={{ color: 'inherit' }}>
-              <strong>Inicio:</strong> {formatFecha(comision.fecha_inicio)}
+              <strong>Inicio:</strong> {formatFecha(comision.fecha_inicio)} • <strong>Fin:</strong> {formatFecha(comision.fecha_fin)}
             </small>
           </div>
           
-          {/* Alumnos */}
+          {/* Días de la semana */}
           <div className="d-flex align-items-center">
-            <People size={14} className="me-2" style={{ color: titleColor }} />
+            <CalendarWeek size={14} className="me-2" style={{ color: titleColor }} />
             <small style={{ color: 'inherit' }}>
-              <strong>Alumnos:</strong> {comision.total_alumnos || 0}
-              {/* Si también quieres mostrar profesores: */}
-              {comision.total_profesores !== undefined && (
-                <>
-                  <span className="mx-1">•</span>
-                  <strong>Profesores:</strong> {comision.total_profesores || 0}
-                </>
-              )}
+              <strong>Días:</strong> {diasSemana}
             </small>
           </div>
           
-          {/* Clases */}
+          {/* Horario */}
           <div className="d-flex align-items-center">
-            <Clock size={14} className="me-2" style={{ color: titleColor }} />
+            <ClockHistory size={14} className="me-2" style={{ color: titleColor }} />
             <small style={{ color: 'inherit' }}>
-              <strong>Clases:</strong> {comision.total_clases || comision.total_clases_generadas || 0}
+              <strong>Horario:</strong> {horario}
             </small>
           </div>
 
-          {/* Modalidad de carrera */}
+          {/* Total de clases */}
+          <div className="d-flex align-items-center">
+            <Book size={14} className="me-2" style={{ color: titleColor }} />
+            <small style={{ color: 'inherit' }}>
+              <strong>Clases totales:</strong> {comision.total_clases_generadas || 0}
+            </small>
+          </div>
+
+          {/* Modalidad de carrera (grabado/en vivo) */}
           {comision.carrera_info?.modalidad && (
             <div className="d-flex align-items-center">
               <PersonCheck size={14} className="me-2" style={{ color: titleColor }} />
@@ -188,19 +223,6 @@ export const CardComision = ({
               </small>
             </div>
           )}
-        </div>
-
-        {/* Coordinador */}
-        <div className="mt-2 pt-2 border-top" style={{ borderColor: borderColor }}>
-          <div className="d-flex align-items-center">
-            <Person size={14} className="me-2" style={{ color: titleColor }} />
-            <small style={{ 
-              color: theme === 'lights' ? '#6c757d' : '#b0b0b0',
-              fontSize: '0.85rem'
-            }}>
-              <strong>Coordinador:</strong> {getCoordinadorNombre()}
-            </small>
-          </div>
         </div>
       </Card.Body>
       
@@ -211,6 +233,14 @@ export const CardComision = ({
           borderTopColor: borderColor
         }}
       >
+        {/* Versión de la carrera */}
+        <small style={{ 
+          color: theme === 'lights' ? '#6c757d' : '#b0b0b0',
+          fontSize: '0.8rem'
+        }}>
+          <strong>Versión:</strong> {comision.carrera_info?.version || comision.carrera?.version || '1.0.0'}
+        </small>
+        
         {/* Fecha de creación */}
         {comision.fecha_creacion && (
           <small style={{ 
@@ -218,16 +248,6 @@ export const CardComision = ({
             fontSize: '0.8rem'
           }}>
             Creada: {formatFecha(comision.fecha_creacion)}
-          </small>
-        )}
-        
-        {/* Fecha de fin */}
-        {comision.fecha_fin && (
-          <small style={{ 
-            color: theme === 'lights' ? '#6c757d' : '#b0b0b0',
-            fontSize: '0.8rem'
-          }}>
-            Finaliza: {formatFecha(comision.fecha_fin)}
           </small>
         )}
         
